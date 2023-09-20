@@ -1,11 +1,8 @@
-import 'package:polyseed/polyseed_dart.dart';
 import 'package:polyseed/src/mnemonics/en_lang.dart';
 import 'package:polyseed/src/polyseed_coin.dart';
-import 'package:polyseed/src/polyseed_data.dart';
+import 'package:polyseed/src/polyseed.dart';
 import 'package:polyseed/src/utils/key_utils.dart';
 import 'package:test/test.dart';
-
-final enLang = EnLang();
 
 void main() {
   final polyseedExpectedOutcomes = [
@@ -22,8 +19,8 @@ void main() {
     test('Decode and test for correct birthday', () {
       final outcome = polyseedExpectedOutcomes.first;
       final seed =
-          polyseedDecode(outcome.expectedSeedString, enLang, outcome.coin);
-      expect(polyseed_get_birthday(seed), outcome.expectedBirthday);
+          Polyseed.decode(outcome.expectedSeedString, enLang, outcome.coin);
+      expect(seed.birthday, outcome.expectedBirthday);
     });
   });
 
@@ -31,8 +28,8 @@ void main() {
     test('', () {
       final outcome = polyseedExpectedOutcomes.first;
       final seed =
-          polyseedDecode(outcome.expectedSeedString, enLang, outcome.coin);
-      final seedStr = polyseed_encode(seed, enLang, outcome.coin);
+          Polyseed.decode(outcome.expectedSeedString, enLang, outcome.coin);
+      final seedStr = seed.encode(enLang, outcome.coin);
       expect(seedStr, outcome.expectedSeedString);
     });
   });
@@ -41,32 +38,33 @@ void main() {
     test('Generate a Key from a Seed', () {
       final outcome = polyseedExpectedOutcomes.first;
       final seed =
-          polyseedDecode(outcome.expectedSeedString, enLang, outcome.coin);
-      final keyBytes = polyseed_keygen(seed, outcome.coin, 32);
+          Polyseed.decode(outcome.expectedSeedString, enLang, outcome.coin);
+      final keyBytes = seed.generateKey(outcome.coin, 32);
       expect(keyToHexString(keyBytes), outcome.expectedKeyString);
     });
   });
 
   test('Create, Encode, Decode', () {
     final coin = PolyseedCoin.POLYSEED_MONERO;
-    PolyseedData seed;
+    Polyseed seed;
     String seedStr;
-      seed = polyseedCreate(0);
-      seedStr = polyseed_encode(seed, enLang, coin);
-      expect(polyseedDecode(seedStr, enLang, coin).birthday, seed.birthday);
+    seed = Polyseed.create();
+    seedStr = seed.encode(enLang, coin);
+    expect(Polyseed.decode(seedStr, enLang, coin).birthday, seed.birthday);
   });
 
   test("Encrypt / Decrypt Seed", () {
     final outcome = polyseedExpectedOutcomes.first;
-    final seed = polyseedDecode(outcome.expectedSeedString, enLang, outcome.coin);
+    final seed =
+        Polyseed.decode(outcome.expectedSeedString, enLang, outcome.coin);
 
-    var seedEnc = polyseed_crypt(seed, "CakeWallet");
-    expect(polyseed_is_encrypted(seedEnc), isTrue);
+    seed.crypt("CakeWallet");
+    expect(seed.isEncrypted, isTrue);
 
-    var seedDec = polyseed_crypt(seedEnc, "CakeWallet");
-    expect(polyseed_is_encrypted(seedDec), isFalse);
+    seed.crypt("CakeWallet");
+    expect(seed.isEncrypted, isFalse);
 
-    final seedStrDec = polyseed_encode(seedDec, enLang, outcome.coin);
+    final seedStrDec = seed.encode(enLang, outcome.coin);
     expect(seedStrDec, outcome.expectedSeedString);
   });
 }
