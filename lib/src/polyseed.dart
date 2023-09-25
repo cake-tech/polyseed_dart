@@ -119,7 +119,7 @@ class Polyseed {
     /* apply coin */
     poly.coeff[POLY_NUM_CHECK_DIGITS] ^= coin.index;
 
-    return lang.encode(poly.coeff);
+    return lang.encodePhrase(poly.coeff);
   }
 
   Uint8List save() => PolyseedStorage.store(_data);

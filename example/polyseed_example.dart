@@ -4,7 +4,7 @@ import 'package:polyseed/polyseed.dart';
 import 'package:polyseed/src/utils/key_utils.dart';
 
 void main() {
-  var lang = PolyseedLang.getByIndex(1); // English
+  var lang = PolyseedLang.getByName("English");
 
   var seed = Polyseed.create();
   var seedStr = seed.encode(lang, PolyseedCoin.POLYSEED_MONERO);
