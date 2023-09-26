@@ -1,6 +1,6 @@
 import 'package:polyseed/src/mnemonics/polyseed_lang.dart';
 
-/* Based on BIP-39 with ordinal sorting */
+// Based on BIP-39 with ordinal sorting
 
 const jpLang = PolyseedLang(
   name: "日本語",

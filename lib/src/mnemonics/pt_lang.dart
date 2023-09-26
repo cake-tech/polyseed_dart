@@ -1,6 +1,6 @@
 import 'package:polyseed/src/mnemonics/polyseed_lang.dart';
 
-/* Based on BIP-39 (unchanged) */
+// Based on BIP-39 (unchanged)
 
 const ptLang = PolyseedLang(
   name: "português",

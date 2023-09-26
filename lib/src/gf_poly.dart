@@ -9,10 +9,10 @@ class GFPoly {
   final List<int> _mul2Table = [5, 7, 1, 3, 13, 15, 9, 11];
 
   GFPoly();
+
   GFPoly.fromPolyseedData(PolyseedData data, {int? checksum}) {
-    if (checksum != null) {
-      coeff[0] = checksum;
-    }
+    if (checksum != null) coeff[0] = checksum;
+
     final extraVal = (data.features << DATE_BITS) | data.birthday;
     var extraBits = FEATURE_BITS + DATE_BITS;
 
@@ -60,9 +60,8 @@ class GFPoly {
   }
 
   int _elemMul2(int x) {
-    if (x < 1024) {
-      return 2 * x;
-    }
+    if (x < 1024) return 2 * x;
+
     return _mul2Table[x % 8] + 16 * ((x - 1024) ~/ 8);
   }
 
@@ -115,12 +114,9 @@ class GFPoly {
     assert(seedBits == SECRET_BITS);
     assert(extraBits == FEATURE_BITS + DATE_BITS);
 
-    final birthday = extraVal & DATE_MASK;
-    final features = extraVal >> DATE_BITS;
-
     return PolyseedData(
-        birthday: birthday,
-        features: features,
+        birthday: extraVal & DATE_MASK,
+        features: extraVal >> DATE_BITS,
         secret: secret,
         checksum: checksum);
   }

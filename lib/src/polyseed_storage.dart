@@ -48,28 +48,30 @@ class PolyseedStorage {
     var v1 = _load16(storage, pos);
     data.birthday = v1 & DATE_MASK;
     v1 >>= DATE_BITS;
-    if (v1 > FEATURE_MASK) {
-      throw InvalidSeedFormatException();
-    }
+
+    if (v1 > FEATURE_MASK) throw InvalidSeedFormatException();
+
     data.features = v1;
     pos += 2;
     data.secret.fillRange(0, SECRET_SIZE, 0);
     data.secret
         .setRange(0, SECRET_SIZE, storage.sublist(pos, pos + SECRET_SIZE));
+
     if (data.secret[SECRET_SIZE - 1] & ~CLEAR_MASK != 0) {
       throw InvalidSeedFormatException();
     }
+
     pos += SECRET_SIZE;
     if (storage[pos] != PolyseedStorage.extraByte) {
       throw InvalidSeedFormatException();
     }
+
     pos++;
     var v2 = _load16(storage, pos);
     data.checksum = v2 & GF_MASK;
     v2 &= ~GF_MASK;
-    if (v2 != PolyseedStorage.footer) {
-      throw InvalidSeedFormatException();
-    }
+
+    if (v2 != PolyseedStorage.footer) throw InvalidSeedFormatException();
 
     return data;
   }

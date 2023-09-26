@@ -1,6 +1,6 @@
 import 'package:polyseed/src/mnemonics/polyseed_lang.dart';
 
-/* Based on BIP-39 with an accent-insensitive word order */
+// Based on BIP-39 with an accent-insensitive word order
 
 const esLang = PolyseedLang(
   name: "español",

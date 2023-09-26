@@ -1,6 +1,6 @@
 import 'package:polyseed/src/mnemonics/polyseed_lang.dart';
 
-/* Based on BIP-39 (unchanged) */
+// Based on BIP-39 (unchanged)
 
 const zhsLang = PolyseedLang(
   name: "中文(简体)",

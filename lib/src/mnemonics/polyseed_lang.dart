@@ -1,4 +1,13 @@
-import 'package:polyseed/src/mnemonics.dart';
+import 'package:polyseed/src/mnemonics/cs_lang.dart';
+import 'package:polyseed/src/mnemonics/en_lang.dart';
+import 'package:polyseed/src/mnemonics/es_lang.dart';
+import 'package:polyseed/src/mnemonics/fr_lang.dart';
+import 'package:polyseed/src/mnemonics/it_lang.dart';
+import 'package:polyseed/src/mnemonics/jp_lang.dart';
+import 'package:polyseed/src/mnemonics/ko_lang.dart';
+import 'package:polyseed/src/mnemonics/pt_lang.dart';
+import 'package:polyseed/src/mnemonics/zh_s_lang.dart';
+import 'package:polyseed/src/mnemonics/zh_t_lang.dart';
 import 'package:polyseed/src/utils/exceptions.dart';
 import 'package:polyseed/src/utils/list_utils.dart';
 

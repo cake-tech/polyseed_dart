@@ -1,7 +1,7 @@
 import 'package:polyseed/src/mnemonics/polyseed_lang.dart';
 
-/* Based on BIP-39 with the correct word order */
-/* https://github.com/bitcoin/bips/pull/493#issuecomment-970511014 */
+// Based on BIP-39 with the correct word order
+// https://github.com/bitcoin/bips/pull/493#issuecomment-970511014
 
 const csLang = PolyseedLang(
   name: "čeština",
