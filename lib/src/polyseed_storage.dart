@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:polyseed/src/constants.dart';
 import 'package:polyseed/src/gf_poly.dart';
+import 'package:polyseed/src/polyseed_birthday.dart';
 import 'package:polyseed/src/polyseed_data.dart';
 import 'package:polyseed/src/polyseed_features.dart';
 import 'package:polyseed/src/utils/exceptions.dart';
@@ -14,17 +14,22 @@ class PolyseedStorage {
   static const int footer = 0x7000;
   static const int extraByte = 0xFF;
 
+  static const int _clearBits = 2; // (SECRET_SIZE) * (CHAR_BIT) - (SECRET_BITS)
+  static const int clearMask =
+      ~(((1 << (_clearBits)) - 1) << (8 - (_clearBits)));
+
   static Uint8List store(PolyseedData data) {
     final headerBytes = utf8.encode(header);
     final storage = Uint8List(32);
     var pos = header.length;
 
     storage.setRange(0, header.length, headerBytes);
-    storage.store16(pos, (data.features << DATE_BITS) | data.birthday);
+    storage.store16(
+        pos, (data.features << PolyseedBirthday.dateBits) | data.birthday);
     pos += 2;
 
-    storage.setRange(pos, pos + SECRET_SIZE, data.secret);
-    pos += SECRET_SIZE;
+    storage.setRange(pos, pos + GFPoly.secretSize, data.secret);
+    pos += GFPoly.secretSize;
 
     storage[pos] = extraByte;
     pos++;
@@ -43,8 +48,8 @@ class PolyseedStorage {
     }
 
     var v1 = storage.load16(pos);
-    data.birthday = v1 & DATE_MASK;
-    v1 >>= DATE_BITS;
+    data.birthday = v1 & PolyseedBirthday.dateBitMask;
+    v1 >>= PolyseedBirthday.dateBits;
 
     if (v1 > PolyseedFeatures.featuresBitMask) {
       throw InvalidSeedFormatException();
@@ -52,15 +57,15 @@ class PolyseedStorage {
 
     data.features = v1;
     pos += 2;
-    data.secret.fillRange(0, SECRET_SIZE, 0);
-    data.secret
-        .setRange(0, SECRET_SIZE, storage.sublist(pos, pos + SECRET_SIZE));
+    data.secret.fillRange(0, GFPoly.secretSize, 0);
+    data.secret.setRange(
+        0, GFPoly.secretSize, storage.sublist(pos, pos + GFPoly.secretSize));
 
-    if (data.secret[SECRET_SIZE - 1] & ~CLEAR_MASK != 0) {
+    if (data.secret[GFPoly.secretSize - 1] & ~clearMask != 0) {
       throw InvalidSeedFormatException();
     }
 
-    pos += SECRET_SIZE;
+    pos += GFPoly.secretSize;
     if (storage[pos] != PolyseedStorage.extraByte) {
       throw InvalidSeedFormatException();
     }

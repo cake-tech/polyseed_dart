@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:pointycastle/api.dart';
 import 'package:pointycastle/key_derivators/api.dart';
 import 'package:polyseed/src/polyseed_birthday.dart';
-import 'package:polyseed/src/constants.dart';
 import 'package:polyseed/src/gf_poly.dart';
 import 'package:polyseed/src/mnemonics/polyseed_lang.dart';
 import 'package:polyseed/src/polyseed_coin.dart';
@@ -36,8 +35,8 @@ class Polyseed {
 
     final random = Random.secure();
     final secret = Uint8List.fromList(
-        List<int>.generate(SECRET_SIZE, (index) => random.nextInt(256)));
-    secret[SECRET_SIZE - 1] &= CLEAR_MASK;
+        List<int>.generate(GFPoly.secretSize, (index) => random.nextInt(256)));
+    secret[GFPoly.secretSize - 1] &= PolyseedStorage.clearMask;
 
     final seed = PolyseedData(
         birthday: birthday,
@@ -71,7 +70,7 @@ class Polyseed {
     poly.coefficients = lang.decodePhrase(str);
 
     // finalize polynomial
-    poly.coefficients[POLY_NUM_CHECK_DIGITS] ^= coin.index;
+    poly.finalize(coin.index);
 
     // validate checksum
     if (!poly.check()) throw ChecksumMismatchException;
@@ -126,7 +125,7 @@ class Polyseed {
     final poly = GFPoly.fromPolyseedData(_data, checksum: _data.checksum);
 
     // apply coin
-    poly.coefficients[POLY_NUM_CHECK_DIGITS] ^= coin.index;
+    poly.finalize(coin.index);
 
     return lang.encodePhrase(poly.coefficients);
   }
@@ -147,10 +146,10 @@ class Polyseed {
     final mask = _deriveKey(utf8.encode(password) as Uint8List, salt, 32);
 
     // apply mask
-    for (var i = 0; i < SECRET_SIZE; ++i) {
+    for (var i = 0; i < GFPoly.secretSize; ++i) {
       _data.secret[i] ^= mask[i];
     }
-    _data.secret[SECRET_SIZE - 1] &= CLEAR_MASK;
+    _data.secret[GFPoly.secretSize - 1] &= PolyseedStorage.clearMask;
     _data.features ^= PolyseedFeatures.encryptedBitMask;
 
     // encode polynomial
