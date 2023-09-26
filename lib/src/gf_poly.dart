@@ -2,24 +2,32 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:polyseed/src/constants.dart';
+import 'package:polyseed/src/polyseed.dart';
 import 'package:polyseed/src/polyseed_data.dart';
+import 'package:polyseed/src/polyseed_features.dart';
 
 class GFPoly {
-  List<int> coeff = Uint16List(POLYSEED_NUM_WORDS);
+  List<int> coefficients = Uint16List(Polyseed.numberOfWords);
+
   final List<int> _mul2Table = [5, 7, 1, 3, 13, 15, 9, 11];
+  final int secretBufferSize = 32;
+
+  static const int bits = 11;
+  static const int size = 1 << bits;
+  static const int bitMask = size - 1;
 
   GFPoly();
 
   GFPoly.fromPolyseedData(PolyseedData data, {int? checksum}) {
-    if (checksum != null) coeff[0] = checksum;
+    if (checksum != null) coefficients[0] = checksum;
 
     final extraVal = (data.features << DATE_BITS) | data.birthday;
-    var extraBits = FEATURE_BITS + DATE_BITS;
+    var extraBits = PolyseedFeatures.featureBits + DATE_BITS;
 
     var secretIdx = 0;
     var secretVal = data.secret[secretIdx];
-    var secretBits = CHAR_BIT;
-    var seedRemBits = SECRET_BITS - CHAR_BIT;
+    var secretBits = charBit;
+    var seedRemBits = SECRET_BITS - charBit;
 
     for (var i = 0; i < DATA_WORDS; ++i) {
       var wordBits = 0;
@@ -27,7 +35,7 @@ class GFPoly {
       while (wordBits < SHARE_BITS) {
         if (secretBits == 0) {
           secretIdx++;
-          secretBits = min(seedRemBits, CHAR_BIT);
+          secretBits = min(seedRemBits, charBit);
           secretVal = data.secret[secretIdx];
           seedRemBits -= secretBits;
         }
@@ -41,7 +49,7 @@ class GFPoly {
       wordVal <<= 1;
       extraBits--;
       wordVal |= (extraVal >> extraBits) & 1;
-      coeff[POLY_NUM_CHECK_DIGITS + i] = wordVal;
+      coefficients[POLY_NUM_CHECK_DIGITS + i] = wordVal;
     }
 
     assert(seedRemBits == 0);
@@ -52,9 +60,9 @@ class GFPoly {
   bool check() => eval() == 0;
 
   int eval() {
-    var result = coeff[POLYSEED_NUM_WORDS - 1];
-    for (var i = POLYSEED_NUM_WORDS - 2; i >= 0; --i) {
-      result = _elemMul2(result) ^ coeff[i];
+    var result = coefficients[Polyseed.numberOfWords - 1];
+    for (var i = Polyseed.numberOfWords - 2; i >= 0; --i) {
+      result = _elemMul2(result) ^ coefficients[i];
     }
     return result;
   }
@@ -65,11 +73,11 @@ class GFPoly {
     return _mul2Table[x % 8] + 16 * ((x - 1024) ~/ 8);
   }
 
-  void encode() => coeff[0] = eval();
+  void encode() => coefficients[0] = eval();
 
   PolyseedData toPolyseedData() {
-    final secret = Uint8List(SECRET_BUFFER_SIZE);
-    final checksum = coeff[0];
+    final secret = Uint8List(secretBufferSize);
+    final checksum = coefficients[0];
 
     var extraVal = 0;
     var extraBits = 0;
@@ -81,26 +89,26 @@ class GFPoly {
     var secretBits = 0;
     var seedBits = 0;
 
-    for (int i = POLY_NUM_CHECK_DIGITS; i < POLYSEED_NUM_WORDS; ++i) {
-      wordVal = coeff[i];
+    for (int i = POLY_NUM_CHECK_DIGITS; i < Polyseed.numberOfWords; ++i) {
+      wordVal = coefficients[i];
 
       extraVal <<= 1;
       extraVal |= wordVal & 1;
       wordVal >>= 1;
-      wordBits = GF_BITS - 1;
+      wordBits = bits - 1;
       extraBits++;
 
       while (wordBits > 0) {
-        if (secretBits == CHAR_BIT) {
+        if (secretBits == charBit) {
           secretIdx++;
           seedBits += secretBits;
           secretBits = 0;
         }
 
-        final chunkBits = min(wordBits, CHAR_BIT - secretBits);
+        final chunkBits = min(wordBits, charBit - secretBits);
         wordBits -= chunkBits;
         final chunkMask = ((1 << chunkBits) - 1);
-        if (chunkBits < CHAR_BIT) {
+        if (chunkBits < charBit) {
           secret[secretIdx] <<= chunkBits;
         }
         secret[secretIdx] |= (wordVal >> wordBits) & chunkMask;
@@ -112,7 +120,7 @@ class GFPoly {
 
     assert(wordBits == 0);
     assert(seedBits == SECRET_BITS);
-    assert(extraBits == FEATURE_BITS + DATE_BITS);
+    assert(extraBits == PolyseedFeatures.featureBits + DATE_BITS);
 
     return PolyseedData(
         birthday: extraVal & DATE_MASK,

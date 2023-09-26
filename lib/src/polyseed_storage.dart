@@ -2,38 +2,35 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:polyseed/src/constants.dart';
+import 'package:polyseed/src/gf_poly.dart';
 import 'package:polyseed/src/polyseed_data.dart';
+import 'package:polyseed/src/polyseed_features.dart';
 import 'package:polyseed/src/utils/exceptions.dart';
-import 'package:polyseed/src/utils/list_utils.dart';
+import 'package:polyseed/src/utils/list_extension.dart';
+import 'package:polyseed/src/utils/uint8list_extension.dart';
 
 class PolyseedStorage {
   static const String header = "POLYSEED";
   static const int footer = 0x7000;
   static const int extraByte = 0xFF;
 
-  static Uint8List _store16(Uint8List list, int index, int value) {
-    list[index] = value;
-    list[index + 1] = (value >> 8);
-    return list;
-  }
-
-  static int _load16(Uint8List list, int index) =>
-      list[index] | (list[index + 1] << 8);
-
   static Uint8List store(PolyseedData data) {
     final headerBytes = utf8.encode(header);
-    var storage = Uint8List(32);
+    final storage = Uint8List(32);
     var pos = header.length;
 
     storage.setRange(0, header.length, headerBytes);
-    storage =
-        _store16(storage, pos, (data.features << DATE_BITS) | data.birthday);
+    storage.store16(pos, (data.features << DATE_BITS) | data.birthday);
     pos += 2;
+
     storage.setRange(pos, pos + SECRET_SIZE, data.secret);
     pos += SECRET_SIZE;
+
     storage[pos] = extraByte;
     pos++;
-    return _store16(storage, pos, footer | data.checksum);
+
+    storage.store16(pos, footer | data.checksum);
+    return storage;
   }
 
   static PolyseedData load(Uint8List storage) {
@@ -45,11 +42,13 @@ class PolyseedStorage {
       throw InvalidSeedFormatException();
     }
 
-    var v1 = _load16(storage, pos);
+    var v1 = storage.load16(pos);
     data.birthday = v1 & DATE_MASK;
     v1 >>= DATE_BITS;
 
-    if (v1 > FEATURE_MASK) throw InvalidSeedFormatException();
+    if (v1 > PolyseedFeatures.featuresBitMask) {
+      throw InvalidSeedFormatException();
+    }
 
     data.features = v1;
     pos += 2;
@@ -67,9 +66,9 @@ class PolyseedStorage {
     }
 
     pos++;
-    var v2 = _load16(storage, pos);
-    data.checksum = v2 & GF_MASK;
-    v2 &= ~GF_MASK;
+    var v2 = storage.load16(pos);
+    data.checksum = v2 & GFPoly.bitMask;
+    v2 &= ~GFPoly.bitMask;
 
     if (v2 != PolyseedStorage.footer) throw InvalidSeedFormatException();
 

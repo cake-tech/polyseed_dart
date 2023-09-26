@@ -13,8 +13,12 @@ import 'package:polyseed/src/polyseed_data.dart';
 import 'package:polyseed/src/polyseed_features.dart';
 import 'package:polyseed/src/polyseed_storage.dart';
 import 'package:polyseed/src/utils/exceptions.dart';
+import 'package:polyseed/src/utils/uint8list_extension.dart';
 
 class Polyseed {
+  /// The number of words required for a valid Polyseed phrase
+  static const numberOfWords = 16;
+
   late PolyseedData _data;
 
   /// Create a random [Polyseed]
@@ -46,28 +50,28 @@ class Polyseed {
 
     // calculate checksum
     poly.encode();
-    seed.checksum = poly.coeff[0];
+    seed.checksum = poly.coefficients[0];
 
     _data = seed;
   }
 
   /// Decode a seed phrase into [Polyseed]
   Polyseed.decode(String str, PolyseedLang lang, PolyseedCoin coin) {
-    assert(coin.index < GF_SIZE);
+    assert(coin.index < GFPoly.size);
 
     final words = str.split(lang.separator);
     final poly = GFPoly();
 
     // split into words
-    if (words.length != POLYSEED_NUM_WORDS) {
+    if (words.length != numberOfWords) {
       throw WordNumberException();
     }
 
     // decode words into polynomial coefficients
-    poly.coeff = lang.decodePhrase(str);
+    poly.coefficients = lang.decodePhrase(str);
 
     // finalize polynomial
-    poly.coeff[POLY_NUM_CHECK_DIGITS] ^= coin.index;
+    poly.coefficients[POLY_NUM_CHECK_DIGITS] ^= coin.index;
 
     // validate checksum
     if (!poly.check()) throw ChecksumMismatchException;
@@ -116,15 +120,15 @@ class Polyseed {
 
   /// Encode to a valid Seed Phrase in the given [PolyseedLang]
   String encode(PolyseedLang lang, PolyseedCoin coin) {
-    assert(coin.index < GF_SIZE);
+    assert(coin.index < GFPoly.size);
 
     // encode polynomial with the existing checksum
     final poly = GFPoly.fromPolyseedData(_data, checksum: _data.checksum);
 
     // apply coin
-    poly.coeff[POLY_NUM_CHECK_DIGITS] ^= coin.index;
+    poly.coefficients[POLY_NUM_CHECK_DIGITS] ^= coin.index;
 
-    return lang.encodePhrase(poly.coeff);
+    return lang.encodePhrase(poly.coefficients);
   }
 
   /// Serialize the seed into a [Uint8List]
@@ -147,7 +151,7 @@ class Polyseed {
       _data.secret[i] ^= mask[i];
     }
     _data.secret[SECRET_SIZE - 1] &= CLEAR_MASK;
-    _data.features ^= ENCRYPTED_MASK;
+    _data.features ^= PolyseedFeatures.encryptedBitMask;
 
     // encode polynomial
     final poly = GFPoly.fromPolyseedData(_data);
@@ -155,37 +159,30 @@ class Polyseed {
     // calculate new checksum
     poly.encode();
 
-    _data.checksum = poly.coeff[0];
+    _data.checksum = poly.coefficients[0];
   }
 
   /// Generate the secret spend key
   Uint8List generateKey(PolyseedCoin coin, int keySize) {
-    assert(coin.index < GF_SIZE);
+    assert(coin.index < GFPoly.size);
 
-    var salt = Uint8List(32);
+    final salt = Uint8List(32);
     salt.setRange(0, 12, utf8.encode("POLYSEED key"));
     salt[13] = 0xff;
     salt[14] = 0xff;
     salt[15] = 0xff;
-    salt = _store32(salt, 16, coin.index); // domain separate by coin
-    salt = _store32(salt, 20, _data.birthday); // domain separate by birthday
-    salt = _store32(salt, 24, _data.features); // domain separate by features
+    salt.store32(16, coin.index); // domain separate by coin
+    salt.store32(20, _data.birthday); // domain separate by birthday
+    salt.store32(24, _data.features); // domain separate by features
 
     return _deriveKey(_data.secret, salt, keySize);
   }
 
-  Uint8List _deriveKey(Uint8List password, Uint8List salt, int keySize) {
-    var derivator = KeyDerivator('SHA-256/HMAC/PBKDF2');
-    var params = Pbkdf2Parameters(salt, KDF_NUM_ITERATIONS, keySize);
+  Uint8List _deriveKey(Uint8List password, Uint8List salt, int keySize,
+      {int iterations = 10000}) {
+    final derivator = KeyDerivator('SHA-256/HMAC/PBKDF2');
+    final params = Pbkdf2Parameters(salt, iterations, keySize);
     derivator.init(params);
     return derivator.process(password);
-  }
-
-  Uint8List _store32(Uint8List list, int index, int value) {
-    list[index] = value;
-    list[index + 1] = (value >> 8);
-    list[index + 2] = (value >> 8);
-    list[index + 3] = (value >> 8);
-    return list;
   }
 }

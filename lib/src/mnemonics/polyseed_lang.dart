@@ -9,7 +9,7 @@ import 'package:polyseed/src/mnemonics/pt_lang.dart';
 import 'package:polyseed/src/mnemonics/zh_s_lang.dart';
 import 'package:polyseed/src/mnemonics/zh_t_lang.dart';
 import 'package:polyseed/src/utils/exceptions.dart';
-import 'package:polyseed/src/utils/list_utils.dart';
+import 'package:polyseed/src/utils/list_extension.dart';
 
 class PolyseedLang {
   /// The native name of the language
@@ -82,11 +82,11 @@ class PolyseedLang {
     }
   }
 
-  /// Decode a valid seed [phrase] into it's coefficient
+  /// Decode a valid seed [phrase] into it's coefficients
   List<int> decodePhrase(String phrase) =>
       phrase.split(separator).map((e) => words.indexOf(e)).toList();
 
-  /// Encode a seed [coefficient] into a valid seed phrase
-  String encodePhrase(List<int> coefficient) =>
-      coefficient.map((e) => words[e]).join(separator);
+  /// Encode a seed [coefficients] into a valid seed phrase
+  String encodePhrase(List<int> coefficients) =>
+      coefficients.map((e) => words[e]).join(separator);
 }
