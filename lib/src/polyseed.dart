@@ -20,6 +20,14 @@ class Polyseed {
 
   late PolyseedData _data;
 
+  /// Check if a seed is a valid Polyseed
+  static bool isValidSeed(String phrase) {
+    if (!PolyseedLang.isValidPhrase(phrase)) return false;
+    final lang = PolyseedLang.getByPhrase(phrase);
+
+    return phrase.split(lang.separator).length == numberOfWords;
+  }
+
   /// Create a random [Polyseed]
   Polyseed.create({int features = 0}) {
     // check features
