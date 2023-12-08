@@ -74,7 +74,7 @@ void main() {
     test('Generate a 25 Word LegacySeed from a Seed', () {
       final seed = Polyseed.decode(expectedSeedString, enLang, coin);
       final keyBytes = seed.generateKey(coin, 32);
-      final legacySeed= LegacySeedLang.getByName("English")
+      final legacySeed = LegacySeedLang.getByName("English")
           .encodePhrase(keyBytes.toHexString());
       expect(legacySeed, expectedLegacySeed);
     });

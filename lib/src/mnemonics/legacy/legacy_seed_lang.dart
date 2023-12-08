@@ -31,10 +31,10 @@ class LegacySeedLang {
 
   const LegacySeedLang(
       {required this.name,
-        required this.nameEnglish,
-        required this.separator,
-        required this.prefixLength,
-        required this.words});
+      required this.nameEnglish,
+      required this.separator,
+      required this.prefixLength,
+      required this.words});
 
   /// A list of all available [LegacySeedLang] instances
   static const languages = [
