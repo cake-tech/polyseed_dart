@@ -8,6 +8,7 @@ environment:
 
 dependencies:
   pointycastle: ^3.7.3
+  hashlib: ^1.12.0
 
 dev_dependencies:
   lints: ^2.1.1

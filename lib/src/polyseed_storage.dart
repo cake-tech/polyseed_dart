@@ -7,7 +7,7 @@ import 'package:polyseed/src/polyseed_data.dart';
 import 'package:polyseed/src/polyseed_features.dart';
 import 'package:polyseed/src/utils/exceptions.dart';
 import 'package:polyseed/src/utils/list_extension.dart';
-import 'package:polyseed/src/utils/uint8list_extension.dart';
+import 'package:polyseed/src/utils/store_uint8list_extension.dart';
 
 class PolyseedStorage {
   static const String header = "POLYSEED";

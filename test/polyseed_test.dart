@@ -1,14 +1,12 @@
 import 'dart:convert';
 
-import 'package:polyseed/src/mnemonics/en_lang.dart';
-import 'package:polyseed/src/polyseed_coin.dart';
-import 'package:polyseed/src/polyseed.dart';
-import 'package:polyseed/src/utils/key_utils.dart';
+import 'package:polyseed/polyseed.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('Polyseed', () {
     final coin = PolyseedCoin.POLYSEED_MONERO;
+    final enLang = PolyseedLang.getByEnglishName("English");
     final expectedSeedString =
         "unaware yard donate shallow slot sing oil oxygen loyal bench near hill surround forum execute lamp";
     final expectedKeyString =
@@ -16,6 +14,8 @@ void main() {
     final expectedSerializedB64String =
         "UE9MWVNFRUQWAP7QTFMwyWZ55hIVJOa7aluTxzP/Y3c=";
     final expectedBirthday = 1693622412;
+    final expectedLegacySeed =
+        "avidly chlorine gave yeti ramped certain hybrid comb governing amply hinder pamphlet offend geometry narrate unopened robot epoxy annoyed glide ingested ascend were austere unopened";
 
     test('Decode and test for correct birthday', () {
       final seed = Polyseed.decode(expectedSeedString, enLang, coin);
@@ -31,7 +31,7 @@ void main() {
     test('Generate a Key from a Seed', () {
       final seed = Polyseed.decode(expectedSeedString, enLang, coin);
       final keyBytes = seed.generateKey(coin, 32);
-      expect(keyToHexString(keyBytes), expectedKeyString);
+      expect(keyBytes.toHexString(), expectedKeyString);
     });
 
     test("Encrypt / Decrypt Seed", () {
@@ -69,6 +69,14 @@ void main() {
 
       final serializedSeed = seed.save();
       expect(Polyseed.load(serializedSeed).birthday, seed.birthday);
+    });
+
+    test('Generate a 25 Word LegacySeed from a Seed', () {
+      final seed = Polyseed.decode(expectedSeedString, enLang, coin);
+      final keyBytes = seed.generateKey(coin, 32);
+      final legacySeed= LegacySeedLang.getByName("English")
+          .encodePhrase(keyBytes.toHexString());
+      expect(legacySeed, expectedLegacySeed);
     });
   });
 }

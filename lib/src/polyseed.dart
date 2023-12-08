@@ -12,7 +12,7 @@ import 'package:polyseed/src/polyseed_data.dart';
 import 'package:polyseed/src/polyseed_features.dart';
 import 'package:polyseed/src/polyseed_storage.dart';
 import 'package:polyseed/src/utils/exceptions.dart';
-import 'package:polyseed/src/utils/uint8list_extension.dart';
+import 'package:polyseed/src/utils/store_uint8list_extension.dart';
 
 class Polyseed {
   /// The number of words required for a valid Polyseed phrase
