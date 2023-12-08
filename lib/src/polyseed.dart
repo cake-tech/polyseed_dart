@@ -151,7 +151,8 @@ class Polyseed {
     salt[14] = 0xff;
     salt[15] = 0xff;
 
-    final mask = _deriveKey(Uint8List.fromList(utf8.encode(password)), salt, 32);
+    final mask =
+        _deriveKey(Uint8List.fromList(utf8.encode(password)), salt, 32);
 
     // apply mask
     for (var i = 0; i < GFPoly.secretSize; ++i) {
