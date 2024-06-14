@@ -1,20 +1,21 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:polyseed/polyseed.dart';
 import 'package:polyseed/src/polyseed.dart';
 import 'package:polyseed/src/polyseed_birthday.dart';
 import 'package:polyseed/src/polyseed_data.dart';
 import 'package:polyseed/src/polyseed_features.dart';
 
 class GFPoly {
-  List<int> coefficients = Uint16List(Polyseed.numberOfWords);
+  late List<int> coefficients;
 
   final List<int> _mul2Table = [5, 7, 1, 3, 13, 15, 9, 11];
   final int _charBit = 8; // the number of bits in char
   final int _secretBufferSize = 32;
   final int _secretBits = 150;
   final int _shareBits = 10; // bits of the secret per word
-  final int _dataWords = Polyseed.numberOfWords - _numberOfCheckDigits;
+  late final int _dataWords;
 
   static const int _numberOfCheckDigits = 1;
   static const int _bits = 11;
@@ -22,13 +23,20 @@ class GFPoly {
   static const int bitMask = size - 1;
   static const int secretSize = 19; // (SECRET_BITS + CHAR_BIT - 1) / CHAR_BIT;
 
-  GFPoly();
+  final int numberOfWords;
 
-  GFPoly.fromPolyseedData(PolyseedData data, {int? checksum}) {
+  GFPoly({this.numberOfWords = Polyseed.numberOfMoneroWords}) {
+    _dataWords = numberOfWords - _numberOfCheckDigits;
+    coefficients = Uint16List(numberOfWords);
+  }
+
+  GFPoly.fromPolyseedData(PolyseedData data,
+      {int? checksum, this.numberOfWords = Polyseed.numberOfMoneroWords})
+      : _dataWords = numberOfWords - _numberOfCheckDigits,
+        coefficients = Uint16List(numberOfWords) {
     if (checksum != null) coefficients[0] = checksum;
 
-    final extraVal =
-        (data.features << PolyseedBirthday.dateBits) | data.birthday;
+    final extraVal = (data.features << PolyseedBirthday.dateBits) | data.birthday;
     var extraBits = PolyseedFeatures.featureBits + PolyseedBirthday.dateBits;
 
     var secretIdx = 0;
@@ -67,8 +75,8 @@ class GFPoly {
   bool check() => eval() == 0;
 
   int eval() {
-    var result = coefficients[Polyseed.numberOfWords - 1];
-    for (var i = Polyseed.numberOfWords - 2; i >= 0; --i) {
+    var result = coefficients[numberOfWords - 1];
+    for (var i = numberOfWords - 2; i >= 0; --i) {
       result = _elemMul2(result) ^ coefficients[i];
     }
     return result;
@@ -98,7 +106,7 @@ class GFPoly {
     var secretBits = 0;
     var seedBits = 0;
 
-    for (int i = _numberOfCheckDigits; i < Polyseed.numberOfWords; ++i) {
+    for (int i = _numberOfCheckDigits; i < numberOfWords; ++i) {
       wordVal = coefficients[i];
 
       extraVal <<= 1;
@@ -129,8 +137,7 @@ class GFPoly {
 
     assert(wordBits == 0);
     assert(seedBits == _secretBits);
-    assert(
-        extraBits == PolyseedFeatures.featureBits + PolyseedBirthday.dateBits);
+    assert(extraBits == PolyseedFeatures.featureBits + PolyseedBirthday.dateBits);
 
     return PolyseedData(
         birthday: extraVal & PolyseedBirthday.dateBitMask,

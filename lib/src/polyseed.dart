@@ -16,20 +16,23 @@ import 'package:polyseed/src/utils/store_uint8list_extension.dart';
 
 class Polyseed {
   /// The number of words required for a valid Polyseed phrase
-  static const numberOfWords = 16;
+  static const numberOfMoneroWords = 16;
+  static const numberOfWowneroWords = 14;
 
   late PolyseedData _data;
 
   /// Check if a seed is a valid Polyseed
-  static bool isValidSeed(String phrase) {
+  static bool isValidSeed(String phrase, {PolyseedCoin coin = PolyseedCoin.POLYSEED_MONERO}) {
     if (!PolyseedLang.isValidPhrase(phrase)) return false;
     final lang = PolyseedLang.getByPhrase(phrase);
+
+    final numberOfWords = _numberOfWords(coin);
 
     return phrase.split(lang.separator).length == numberOfWords;
   }
 
   /// Create a random [Polyseed]
-  Polyseed.create({int features = 0}) {
+  Polyseed.create({int features = 0, PolyseedCoin coin = PolyseedCoin.POLYSEED_MONERO}) {
     // check features
     final seedFeatures = PolyseedFeatures.make(features);
 
@@ -38,22 +41,21 @@ class Polyseed {
     }
 
     // create seed
-    final birthday = PolyseedBirthday.encode(
-        (DateTime.now().millisecondsSinceEpoch / 1000).round());
+    final birthday =
+        PolyseedBirthday.encode((DateTime.now().millisecondsSinceEpoch / 1000).round());
 
     final random = Random.secure();
-    final secret = Uint8List.fromList(
-        List<int>.generate(GFPoly.secretSize, (index) => random.nextInt(256)));
+    final secret =
+        Uint8List.fromList(List<int>.generate(GFPoly.secretSize, (index) => random.nextInt(256)));
     secret[GFPoly.secretSize - 1] &= PolyseedStorage.clearMask;
 
-    final seed = PolyseedData(
-        birthday: birthday,
-        features: seedFeatures,
-        secret: secret,
-        checksum: 0);
+    final seed =
+        PolyseedData(birthday: birthday, features: seedFeatures, secret: secret, checksum: 0);
+
+    final numberOfWords = _numberOfWords(coin);
 
     // encode polynomial
-    final poly = GFPoly.fromPolyseedData(seed);
+    final poly = GFPoly.fromPolyseedData(seed, numberOfWords: numberOfWords);
 
     // calculate checksum
     poly.encode();
@@ -67,7 +69,10 @@ class Polyseed {
     assert(coin.index < GFPoly.size);
 
     final words = str.split(lang.separator);
-    final poly = GFPoly();
+
+    final numberOfWords = _numberOfWords(coin);
+
+    final poly = GFPoly(numberOfWords: numberOfWords);
 
     // split into words
     if (words.length != numberOfWords) {
@@ -97,12 +102,16 @@ class Polyseed {
   /// Deserialize a [Uint8List] into a [Polyseed]
   ///
   /// To serialize the [Polyseed] use [save]
-  Polyseed.load(Uint8List storage) {
+  Polyseed.load(Uint8List storage, {PolyseedCoin coin = PolyseedCoin.POLYSEED_MONERO}) {
     // deserialize data
     final seed = PolyseedStorage.load(storage);
 
     // encode polynomial with the existing checksum
-    final poly = GFPoly.fromPolyseedData(seed, checksum: seed.checksum);
+    final poly = GFPoly.fromPolyseedData(
+      seed,
+      checksum: seed.checksum,
+      numberOfWords: _numberOfWords(coin),
+    );
 
     // validate checksum
     if (!poly.check()) throw ChecksumMismatchException();
@@ -122,15 +131,18 @@ class Polyseed {
   int get birthday => PolyseedBirthday.decode(_data.birthday);
 
   /// Check if the [Polyseed] as a given feature mask enabled
-  bool hasFeature(int feature) =>
-      PolyseedFeatures.get(_data.features, feature) != 0;
+  bool hasFeature(int feature) => PolyseedFeatures.get(_data.features, feature) != 0;
 
   /// Encode to a valid Seed Phrase in the given [PolyseedLang]
   String encode(PolyseedLang lang, PolyseedCoin coin) {
     assert(coin.index < GFPoly.size);
 
     // encode polynomial with the existing checksum
-    final poly = GFPoly.fromPolyseedData(_data, checksum: _data.checksum);
+    final poly = GFPoly.fromPolyseedData(
+      _data,
+      checksum: _data.checksum,
+      numberOfWords: _numberOfWords(coin),
+    );
 
     // apply coin
     poly.finalize(coin.index);
@@ -144,15 +156,14 @@ class Polyseed {
   Uint8List save() => PolyseedStorage.store(_data);
 
   /// Encrypt or decrypt the [Polyseed] with the [password]
-  void crypt(String password) {
+  void crypt(String password, {PolyseedCoin coin = PolyseedCoin.POLYSEED_MONERO}) {
     // derive an encryption mask
     final salt = Uint8List(16);
     salt.setRange(0, 13, utf8.encode("POLYSEED mask"));
     salt[14] = 0xff;
     salt[15] = 0xff;
 
-    final mask =
-        _deriveKey(Uint8List.fromList(utf8.encode(password)), salt, 32);
+    final mask = _deriveKey(Uint8List.fromList(utf8.encode(password)), salt, 32);
 
     // apply mask
     for (var i = 0; i < GFPoly.secretSize; ++i) {
@@ -162,7 +173,7 @@ class Polyseed {
     _data.features ^= PolyseedFeatures.encryptedBitMask;
 
     // encode polynomial
-    final poly = GFPoly.fromPolyseedData(_data);
+    final poly = GFPoly.fromPolyseedData(_data, numberOfWords: _numberOfWords(coin));
 
     // calculate new checksum
     poly.encode();
@@ -186,11 +197,13 @@ class Polyseed {
     return _deriveKey(_data.secret, salt, keySize);
   }
 
-  Uint8List _deriveKey(Uint8List password, Uint8List salt, int keySize,
-      {int iterations = 10000}) {
+  Uint8List _deriveKey(Uint8List password, Uint8List salt, int keySize, {int iterations = 10000}) {
     final derivator = KeyDerivator('SHA-256/HMAC/PBKDF2');
     final params = Pbkdf2Parameters(salt, iterations, keySize);
     derivator.init(params);
     return derivator.process(password);
   }
+
+  static int _numberOfWords(PolyseedCoin coin) =>
+      coin == PolyseedCoin.POLYSEED_MONERO ? numberOfMoneroWords : numberOfWowneroWords;
 }
