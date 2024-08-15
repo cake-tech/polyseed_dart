@@ -56,11 +56,11 @@ class PolyseedLang {
 
   /// Get the [PolyseedLang] by it's name eg. "español"
   static PolyseedLang getByName(String name) =>
-      languages.firstWhere((e) => e.name == name);
+      languages.firstWhere((e) => e.name.toLowerCase() == name.toLowerCase());
 
   /// Get the [PolyseedLang] by it's english name eg. "Chinese (Simplified)"
   static PolyseedLang getByEnglishName(String englishName) =>
-      languages.firstWhere((e) => e.nameEnglish == englishName);
+      languages.firstWhere((e) => e.nameEnglish.toLowerCase() == englishName.toLowerCase());
 
   /// Get the [PolyseedLang] using the words of [phrase]
   static PolyseedLang getByPhrase(String phrase) {

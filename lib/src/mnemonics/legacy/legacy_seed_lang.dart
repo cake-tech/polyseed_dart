@@ -56,11 +56,11 @@ class LegacySeedLang {
 
   /// Get the [LegacySeedLang] by it's name eg. "Deutsch"
   static LegacySeedLang getByName(String name) =>
-      languages.firstWhere((e) => e.name == name);
+      languages.firstWhere((e) => e.name.toLowerCase() == name.toLowerCase());
 
   /// Get the [LegacySeedLang] by it's english name eg. "Chinese (Simplified)"
   static LegacySeedLang getByEnglishName(String englishName) =>
-      languages.firstWhere((e) => e.nameEnglish == englishName);
+      languages.firstWhere((e) => e.nameEnglish.toLowerCase() == englishName.toLowerCase());
 
   /// Get the [LegacySeedLang] using the words of [phrase]
   static LegacySeedLang getByPhrase(String phrase) {
