@@ -128,7 +128,7 @@ class LegacySeedLang {
       trimmedWords += words[i].substring(0, actualPrefixLength);
     }
 
-    var checksum = trimmedWords.crc32code(Encoding.getByName('utf-8'));
+    var checksum = crc32code(trimmedWords, Encoding.getByName('utf-8'));
     var index = (checksum % words.length);
     return index;
   }

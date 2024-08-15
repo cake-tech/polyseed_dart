@@ -1,5 +1,10 @@
 ## 0.0.5
 
+- Make getters less strict
+- Support up-to-date dependencies
+
+## 0.0.5
+
 - Fix issues with normalization of French and Spanish 
  
 ## 0.0.4

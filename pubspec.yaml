@@ -1,6 +1,6 @@
 name: polyseed
 description: A pure dart implementation of the 16-word seed scheme for monero
-version: 0.0.5
+version: 0.0.6
 homepage: https://cakelabs.com
 repository: https://github.com/cake-tech/polyseed_dart
 issue_tracker: https://github.com/cake-tech/polyseed_dart/issues
@@ -10,7 +10,7 @@ environment:
 
 dependencies:
   pointycastle: ^3.7.3
-  hashlib: ^1.12.0
+  hashlib: ^1.19.2
   unorm_dart: ^0.3.0
 
 dev_dependencies:
