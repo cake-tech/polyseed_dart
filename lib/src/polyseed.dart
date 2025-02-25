@@ -23,13 +23,17 @@ class Polyseed {
   /// Check if a seed is a valid Polyseed
   static bool isValidSeed(String phrase, [PolyseedLang? lang]) {
     if (lang != null && !PolyseedLang.isValidPhrase(phrase)) return false;
-    final polyseedLang = lang ?? PolyseedLang.getByPhrase(phrase);
+    try {
+      final polyseedLang = lang ?? PolyseedLang.getByPhrase(phrase);
 
-    return polyseedLang
-        .normalizeSeparator(phrase)
-        .split(polyseedLang.separator)
-        .length ==
-        numberOfWords;
+      return polyseedLang
+              .normalizeSeparator(phrase)
+              .split(polyseedLang.separator)
+              .length ==
+          numberOfWords;
+    } on UnknownLangException catch (_) {
+      return false;
+    }
   }
 
   /// Create a random [Polyseed]
