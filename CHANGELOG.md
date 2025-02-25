@@ -1,4 +1,8 @@
-## 0.0.5
+## 0.0.7
+
+- Improve compatibility with japanese strings using U+0020 separators
+
+## 0.0.6
 
 - Make getters less strict
 - Support up-to-date dependencies
