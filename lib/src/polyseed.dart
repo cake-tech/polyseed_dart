@@ -21,11 +21,15 @@ class Polyseed {
   late PolyseedData _data;
 
   /// Check if a seed is a valid Polyseed
-  static bool isValidSeed(String phrase) {
-    if (!PolyseedLang.isValidPhrase(phrase)) return false;
-    final lang = PolyseedLang.getByPhrase(phrase);
+  static bool isValidSeed(String phrase, [PolyseedLang? lang]) {
+    if (lang != null && !PolyseedLang.isValidPhrase(phrase)) return false;
+    final polyseedLang = lang ?? PolyseedLang.getByPhrase(phrase);
 
-    return phrase.split(lang.separator).length == numberOfWords;
+    return polyseedLang
+        .normalizeSeparator(phrase)
+        .split(polyseedLang.separator)
+        .length ==
+        numberOfWords;
   }
 
   /// Create a random [Polyseed]
@@ -66,9 +70,10 @@ class Polyseed {
   Polyseed.decode(String str, PolyseedLang lang, PolyseedCoin coin) {
     assert(coin.index < GFPoly.size);
 
-    final words = str.split(lang.separator);
+    final words = lang.normalizeSeparator(str).split(lang.separator);
     final poly = GFPoly();
 
+    
     // split into words
     if (words.length != numberOfWords) {
       throw WordNumberException();

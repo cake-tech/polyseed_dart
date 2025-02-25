@@ -60,13 +60,15 @@ class PolyseedLang {
 
   /// Get the [PolyseedLang] by it's english name eg. "Chinese (Simplified)"
   static PolyseedLang getByEnglishName(String englishName) =>
-      languages.firstWhere((e) => e.nameEnglish.toLowerCase() == englishName.toLowerCase());
+      languages.firstWhere(
+          (e) => e.nameEnglish.toLowerCase() == englishName.toLowerCase());
 
   /// Get the [PolyseedLang] using the words of [phrase]
   static PolyseedLang getByPhrase(String phrase) {
     for (var language in languages) {
       phrase = language.hasAccents ? unorm.nfkd(phrase) : phrase;
-      final phraseWords = phrase.split(language.separator);
+      final phraseWords =
+          language.normalizeSeparator(phrase).split(language.separator);
       if (language.words.containsAll(phraseWords)) {
         return language;
       }
@@ -85,7 +87,7 @@ class PolyseedLang {
   }
 
   /// Decode a valid seed [phrase] into it's coefficients
-  List<int> decodePhrase(String phrase) => phrase
+  List<int> decodePhrase(String phrase) => normalizeSeparator(phrase)
       .split(separator)
       .map((e) => words.indexOf(hasAccents ? unorm.nfkd(e) : e))
       .toList();
@@ -93,4 +95,8 @@ class PolyseedLang {
   /// Encode a seed [coefficients] into a valid seed phrase
   String encodePhrase(List<int> coefficients) =>
       coefficients.map((e) => words[e]).join(separator);
+
+  /// Replace space with the expected [separator] to improve compatibility
+  String normalizeSeparator(String phrase) =>
+      separator != '\u0020' ? phrase.replaceAll("\u0020", separator) : phrase;
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:polyseed/polyseed.dart';
 import 'package:polyseed/src/mnemonics/es_lang.dart';
+import 'package:polyseed/src/mnemonics/jp_lang.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -117,6 +118,24 @@ void main() {
             .encodePhrase(keyBytes.toHexString());
         expect(legacySeed,
             "remedio haz ébano lobo orden celda pezuña regreso ardilla estar acelga fallo punto nación hada quitar ancla obeso piedra pausa helio fuente joroba pista quitar");
+      });
+
+      test('Edge Case: Japanese seed with normal space separator', () {
+        final seed =
+            "せつぶん いせい てはい けんか たてる ねんきん くたびれる いよく やたい あいこくしん ちきゅう きたえる せたけ あひる かのう げつれい";
+
+        final detectedLang = PolyseedLang.getByPhrase(seed);
+        expect(detectedLang, jpLang);
+
+        final isValidSeed = Polyseed.isValidSeed(seed);
+        expect(isValidSeed, true);
+
+        final key = Polyseed.decode(seed, jpLang, coin)
+            .generateKey(coin, 32)
+            .toHexString();
+
+        expect(key,
+            "340593b3fd0b2670b4727b6a9b64f3f817e2b97fcb26ea3ae8467234eb857f95");
       });
     });
   });
