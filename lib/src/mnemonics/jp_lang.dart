@@ -9,7 +9,7 @@ const jpLang = PolyseedLang(
   isSorted: true,
   hasPrefix: false,
   hasAccents: false,
-  compose: false,
+  compose: true,
   words: [
     "あいこくしん",
     "あいさつ",
