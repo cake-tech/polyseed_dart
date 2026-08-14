@@ -11,7 +11,7 @@ environment:
 dependencies:
   pointycastle: ^3.7.3
   hashlib: ^1.19.2
-  unorm_dart: ^0.3.0
+  unorm_dart: ^0.3.2
 
 dev_dependencies:
   lints: ^2.1.1
