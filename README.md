@@ -79,3 +79,11 @@ the wallet birthday month, seed features and the coin flag.
 
 The size of the secret seed and the domain separation parameters provide a comfortable security margin
 against [multi-target attacks](https://blog.cr.yp.to/20151120-batchattacks.html).
+
+## License
+
+This package is licensed under the MIT License.<br>
+Portions are a Dart port of [Polyseed](https://github.com/tevador/polyseed) and are licensed under the Apache License, Version 2.0.<br>
+The legacy seed encoder and its wordlists are derived from [Monero](https://github.com/monero-project/monero) and are subject to the BSD 3-Clause License. 
+
+See [LICENSE](LICENSE) and [NOTICE](NOTICE) for the full license texts and attributions.
