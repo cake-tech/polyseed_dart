@@ -3,9 +3,14 @@ import 'dart:typed_data';
 
 import 'package:polyseed/polyseed.dart';
 import 'package:polyseed/src/mnemonics/es_lang.dart';
+import 'package:polyseed/src/gf_poly.dart';
 import 'package:polyseed/src/mnemonics/jp_lang.dart';
 import 'package:polyseed/src/utils/store_uint8list_extension.dart';
+import 'package:polyseed/src/mnemonics/ko_lang.dart';
+import 'package:polyseed/src/polyseed_data.dart';
+import 'package:polyseed/src/polyseed_storage.dart';
 import 'package:test/test.dart';
+import 'package:unorm_dart/unorm_dart.dart' as unorm;
 
 void main() {
   group('Polyseed', () {
@@ -13,10 +18,8 @@ void main() {
     final enLang = PolyseedLang.getByEnglishName("English");
     final expectedSeedString =
         "unaware yard donate shallow slot sing oil oxygen loyal bench near hill surround forum execute lamp";
-    final expectedKeyString =
-        "cbbd142d38347773d44aa830f5f01442aa6d0d3bb48571884479531248e6fa1c";
-    final expectedSerializedB64String =
-        "UE9MWVNFRUQWAP7QTFMwyWZ55hIVJOa7aluTxzP/Y3c=";
+    final expectedKeyString = "cbbd142d38347773d44aa830f5f01442aa6d0d3bb48571884479531248e6fa1c";
+    final expectedSerializedB64String = "UE9MWVNFRUQWAP7QTFMwyWZ55hIVJOa7aluTxzP/Y3c=";
     final expectedBirthday = 1693622412;
     final expectedLegacySeed =
         "avidly chlorine gave yeti ramped certain hybrid comb governing amply hinder pamphlet offend geometry narrate unopened robot epoxy annoyed glide ingested ascend were austere unopened";
@@ -77,6 +80,49 @@ void main() {
       expect(Polyseed.load(serializedSeed).birthday, seed.birthday);
     });
 
+    test('store32 writes little-endian 32-bit values', () {
+      final bytes = Uint8List(8);
+      bytes.store32(0, 1015);
+      bytes.store32(4, 0x12345678);
+      expect(bytes.toHexString(), "f703000078563412");
+    });
+
+    test('Generate a Key from a Seed with a birthday index >= 256', () {
+      final secret = Uint8List.fromList(List.generate(19, (i) => i + 1));
+      secret[GFPoly.secretSize - 1] &= PolyseedStorage.clearMask;
+      final data = PolyseedData(birthday: 1015, features: 0, secret: secret, checksum: 0);
+      final poly = GFPoly.fromPolyseedData(data);
+      poly.encode();
+      data.checksum = poly.coefficients[0];
+
+      final seed = Polyseed.load(PolyseedStorage.store(data));
+      // PBKDF2-HMAC-SHA256 with the salt
+      // 504f4c5953454544206b657900ffffff00000000f70300000000000000000000
+      expect(seed.generateKey(coin, 32).toHexString(),
+          "ef5b8d432498e38123b265b219b43924374f21225aace6afc14159d58d21331f");
+    });
+
+    test('Decode composed (NFC) japanese seeds', () {
+      final seedNfc =
+          unorm.nfc("せつぶん　いせい　てはい　けんか　たてる　ねんきん　くたびれる　いよく　やたい　あいこくしん　ちきゅう　きたえる　せたけ　あひる　かのう　げつれい");
+      expect(PolyseedLang.getByPhrase(seedNfc), jpLang);
+      expect(Polyseed.isValidSeed(seedNfc), true);
+
+      final key = Polyseed.decode(seedNfc, jpLang, coin).generateKey(coin, 32).toHexString();
+      expect(key, "340593b3fd0b2670b4727b6a9b64f3f817e2b97fcb26ea3ae8467234eb857f95");
+    });
+
+    test('Decode composed (NFC) korean seeds', () {
+      final seed = Polyseed.decode(expectedSeedString, enLang, coin);
+      final seedKo = seed.encode(koLang, coin);
+      final seedNfc = unorm.nfc(seedKo);
+      expect(seedNfc, isNot(seedKo));
+      expect(PolyseedLang.getByPhrase(seedNfc), koLang);
+
+      final key = Polyseed.decode(seedNfc, koLang, coin).generateKey(coin, 32).toHexString();
+      expect(key, expectedKeyString);
+    });
+
     test('Normalize french seeds', () {
       final seedRaw =
           "merle bureau littoral vaisseau relatif exprimer voiture légal utile académie graffiti ultime substrat redouter oisillon soudure";
@@ -95,16 +141,15 @@ void main() {
       test('Generate a 25 Word english LegacySeed from a Seed', () {
         final seed = Polyseed.decode(expectedSeedString, enLang, coin);
         final keyBytes = seed.generateKey(coin, 32);
-        final legacySeed = LegacySeedLang.getByName("English")
-            .encodePhrase(keyBytes.toHexString());
+        final legacySeed = LegacySeedLang.getByName("English").encodePhrase(keyBytes.toHexString());
         expect(legacySeed, expectedLegacySeed);
       });
 
       test('Generate a 25 Word spanish LegacySeed from a Seed', () {
         final seed = Polyseed.decode(expectedSeedString, enLang, coin);
         final keyBytes = seed.generateKey(coin, 32);
-        final legacySeed = LegacySeedLang.getByEnglishName("Spanish")
-            .encodePhrase(keyBytes.toHexString());
+        final legacySeed =
+            LegacySeedLang.getByEnglishName("Spanish").encodePhrase(keyBytes.toHexString());
         expect(legacySeed, expectedLegacySeedEs);
       });
 
@@ -116,15 +161,14 @@ void main() {
             esLang,
             coin);
         final keyBytes = seed.generateKey(coin, 32);
-        final legacySeed = LegacySeedLang.getByEnglishName("Spanish")
-            .encodePhrase(keyBytes.toHexString());
+        final legacySeed =
+            LegacySeedLang.getByEnglishName("Spanish").encodePhrase(keyBytes.toHexString());
         expect(legacySeed,
             "remedio haz ébano lobo orden celda pezuña regreso ardilla estar acelga fallo punto nación hada quitar ancla obeso piedra pausa helio fuente joroba pista quitar");
       });
 
       test('Edge Case: Japanese seed with normal space separator', () {
-        final seed =
-            "せつぶん いせい てはい けんか たてる ねんきん くたびれる いよく やたい あいこくしん ちきゅう きたえる せたけ あひる かのう げつれい";
+        final seed = "せつぶん いせい てはい けんか たてる ねんきん くたびれる いよく やたい あいこくしん ちきゅう きたえる せたけ あひる かのう げつれい";
 
         final detectedLang = PolyseedLang.getByPhrase(seed);
         expect(detectedLang, jpLang);
@@ -132,12 +176,9 @@ void main() {
         final isValidSeed = Polyseed.isValidSeed(seed);
         expect(isValidSeed, true);
 
-        final key = Polyseed.decode(seed, jpLang, coin)
-            .generateKey(coin, 32)
-            .toHexString();
+        final key = Polyseed.decode(seed, jpLang, coin).generateKey(coin, 32).toHexString();
 
-        expect(key,
-            "340593b3fd0b2670b4727b6a9b64f3f817e2b97fcb26ea3ae8467234eb857f95");
+        expect(key, "340593b3fd0b2670b4727b6a9b64f3f817e2b97fcb26ea3ae8467234eb857f95");
       });
     });
 

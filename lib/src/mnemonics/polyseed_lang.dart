@@ -65,10 +65,9 @@ class PolyseedLang {
 
   /// Get the [PolyseedLang] using the words of [phrase]
   static PolyseedLang getByPhrase(String phrase) {
+    final normalizedPhrase = unorm.nfkd(phrase.trim());
     for (var language in languages) {
-      phrase = language.hasAccents ? unorm.nfkd(phrase) : phrase;
-      final phraseWords =
-          language.normalizeSeparator(phrase).split(language.separator);
+      final phraseWords = language.normalizeSeparator(normalizedPhrase).split(language.separator);
       if (language.words.containsAll(phraseWords)) {
         return language;
       }
@@ -87,10 +86,11 @@ class PolyseedLang {
   }
 
   /// Decode a valid seed [phrase] into it's coefficients
-  List<int> decodePhrase(String phrase) => normalizeSeparator(phrase)
-      .split(separator)
-      .map((e) => words.indexOf(hasAccents ? unorm.nfkd(e) : e))
-      .toList();
+  ///
+  /// The [phrase] is normalized to NFKD, the form all wordlists are stored in,
+  /// so composed (NFC) input as produced by most IMEs is accepted as well
+  List<int> decodePhrase(String phrase) =>
+      normalizeSeparator(unorm.nfkd(phrase)).split(separator).map((e) => words.indexOf(e)).toList();
 
   /// Encode a seed [coefficients] into a valid seed phrase
   String encodePhrase(List<int> coefficients) =>

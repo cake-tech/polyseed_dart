@@ -74,6 +74,7 @@ class Polyseed {
   Polyseed.decode(String str, PolyseedLang lang, PolyseedCoin coin) {
     assert(coin.index < GFPoly.size);
 
+    str = str.trim();
     final words = lang.normalizeSeparator(str).split(lang.separator);
     final poly = GFPoly();
 
@@ -90,7 +91,7 @@ class Polyseed {
     poly.finalize(coin.index);
 
     // validate checksum
-    if (!poly.check()) throw ChecksumMismatchException;
+    if (!poly.check()) throw ChecksumMismatchException();
 
     // decode polynomial into seed data
     var seed = poly.toPolyseedData();
