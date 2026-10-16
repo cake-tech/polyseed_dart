@@ -1,14 +1,31 @@
-// Port of the reference implementation's test suite:
-// https://github.com/tevador/polyseed/blob/master/tests/tests.c
-//
-// The C tests inject deterministic dependencies (random bytes, time, PBKDF2).
-// Dart has no dependency injection, so:
-//  - seeds are created with [createSeed], which mirrors [Polyseed.create] but
-//    takes the random bytes and the time as arguments
-//  - the assertions of the `pbkdf2_dummy*` functions on the PBKDF2 password
-//    and salt are checked by comparing the derived key against an independent
-//    PBKDF2 computation over the expected password and salt
-//  - the allocation, memzero and inject tests have no Dart equivalent
+/*
+ * Copyright (c) 2020-2026 tevador <tevador@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Ported from tevador/polyseed (tests/tests.c) to Dart by Cake Labs LLC.
+ */
+
+/*
+ * The C tests inject deterministic dependencies (random bytes, time, PBKDF2).
+ * Dart has no dependency injection, so:
+ *  - seeds are created with [createSeed], which mirrors [Polyseed.create] but
+ *    takes the random bytes and the time as arguments
+ *  - the assertions of the `pbkdf2_dummy*` functions on the PBKDF2 password
+ *    and salt are checked by comparing the derived key against an independent
+ *    PBKDF2 computation over the expected password and salt
+ *  - the allocation, memzero and inject tests have no Dart equivalent
+ */
 import 'dart:convert';
 import 'dart:typed_data';
 
