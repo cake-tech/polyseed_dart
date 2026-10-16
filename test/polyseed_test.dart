@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:polyseed/polyseed.dart';
 import 'package:polyseed/src/mnemonics/es_lang.dart';
 import 'package:polyseed/src/mnemonics/jp_lang.dart';
+import 'package:polyseed/src/utils/store_uint8list_extension.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -137,6 +139,11 @@ void main() {
         expect(key,
             "340593b3fd0b2670b4727b6a9b64f3f817e2b97fcb26ea3ae8467234eb857f95");
       });
+    });
+
+    test('store32 writes the upper bytes with distinct shifts', () {
+      final buf = Uint8List(4)..store32(0, 1015);
+      expect(buf, equals([0xF7, 0x03, 0x00, 0x00]));
     });
   });
 }

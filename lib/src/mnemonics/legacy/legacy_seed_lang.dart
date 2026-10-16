@@ -123,13 +123,11 @@ class LegacySeedLang {
   int _getChecksumIndex(List<String> words, int prefixLen) {
     var trimmedWords = '';
     for (var i = 0; i < words.length; i++) {
-      final actualPrefixLength =
-          words[i].length > prefixLen ? prefixLen : words[i].length;
+      final actualPrefixLength = words[i].length > prefixLen ? prefixLen : words[i].length;
       trimmedWords += words[i].substring(0, actualPrefixLength);
     }
 
-    var checksum = crc32code(trimmedWords, Encoding.getByName('utf-8'));
-    var index = (checksum % words.length);
-    return index;
+    final checksum = crc32code(trimmedWords, encoding: Encoding.getByName('utf-8'));
+    return (checksum % words.length);
   }
 }
