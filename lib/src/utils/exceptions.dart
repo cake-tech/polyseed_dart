@@ -30,3 +30,8 @@ class UnsupportedSeedFeatureException extends PolyseedException {
 class InvalidSeedFormatException extends PolyseedException {
   InvalidSeedFormatException() : super("Invalid seed format");
 }
+
+class PasswordTooLongException extends PolyseedException {
+  PasswordTooLongException()
+      : super("Passphrase is too long after NFKD normalization");
+}
