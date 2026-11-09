@@ -1,3 +1,7 @@
+## 0.0.8
+
+- Normalize encryption passphrases with NFKD, and use at most 575 bytes, matching Monero
+
 ## 0.0.7
 
 - Improve compatibility with japanese strings using U+0020 separators

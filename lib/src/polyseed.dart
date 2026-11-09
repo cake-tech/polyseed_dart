@@ -31,6 +31,7 @@ import 'package:polyseed/src/polyseed_features.dart';
 import 'package:polyseed/src/polyseed_storage.dart';
 import 'package:polyseed/src/utils/exceptions.dart';
 import 'package:polyseed/src/utils/store_uint8list_extension.dart';
+import 'package:unorm_dart/unorm_dart.dart' as unorm;
 
 class Polyseed {
   /// The number of words required for a valid Polyseed phrase
@@ -95,7 +96,6 @@ class Polyseed {
     str = str.trim();
     final words = lang.normalizeSeparator(str).split(lang.separator);
     final poly = GFPoly();
-
 
     // split into words
     if (words.length != numberOfWords) {
@@ -179,8 +179,7 @@ class Polyseed {
     salt[14] = 0xff;
     salt[15] = 0xff;
 
-    final mask =
-        _deriveKey(Uint8List.fromList(utf8.encode(password)), salt, 32);
+    final mask = _deriveKey(_polyseedPasswordBytes(password), salt, 32);
 
     // apply mask
     for (var i = 0; i < GFPoly.secretSize; ++i) {
@@ -221,4 +220,36 @@ class Polyseed {
     derivator.init(params);
     return derivator.process(password);
   }
+}
+
+// polyseed.h POLYSEED_STR_SIZE, including the terminating null.
+const _polyseedStrSize = 576;
+
+// Bytes passed to PBKDF2. Matches utf8_nfkd_lazy in tevador/polyseed:
+// an all-ASCII passphrase is truncated to 575 bytes, and any non-ASCII
+// passphrase is NFKD-normalized. Monero rejects a normalized passphrase
+// that does not fit in that buffer.
+Uint8List _polyseedPasswordBytes(String password) {
+  final raw = utf8.encode(password);
+  final scan =
+      raw.length < _polyseedStrSize - 1 ? raw.length : _polyseedStrSize - 1;
+  var nonAscii = false;
+  for (var i = 0; i < scan; i++) {
+    if (raw[i] >= 0x80) {
+      nonAscii = true;
+      break;
+    }
+  }
+  if (!nonAscii) {
+    if (raw.length <= _polyseedStrSize - 1) {
+      return Uint8List.fromList(raw);
+    }
+    return Uint8List.fromList(raw.sublist(0, _polyseedStrSize - 1));
+  }
+
+  final normalized = utf8.encode(unorm.nfkd(password));
+  if (normalized.length > _polyseedStrSize - 1) {
+    throw PasswordTooLongException();
+  }
+  return Uint8List.fromList(normalized);
 }
